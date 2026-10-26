@@ -24,7 +24,12 @@ u.Tinlet_drying = r.Tinlet_drying;
 cryst_output.conc_slurry = r.conc_slurry;
 rng(job.seed, 'twister');
 initial_rng_state = rng;
-simulation_output = run_simulation(u, cryst_output, job.scenario, ...
+disturbance = job.scenario;
+if isfield(job, 'disturbance_scale')
+    % Only the explicit sweep patch accepts this scenario/size pair.
+    disturbance = struct('scenario', job.scenario, 'scale', job.disturbance_scale);
+end
+simulation_output = run_simulation(u, cryst_output, disturbance, ...
     r.control_mode, r.total_duration, r.control_interval, ...
     r.sampling_interval, r.inter_cycle_Dt, r.mesh_clean_Dt);
 assert(isstruct(simulation_output), 'Simulator returned no complete output.');

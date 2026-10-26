@@ -1,0 +1,63 @@
+{
+  "id": "sensor-logging-v2-disturbance-scale-v1",
+  "files": [
+    {
+      "target": "simulator/switch_cycle.m",
+      "original_lf_sha256": "f2c8da04c13bb97f85de28c66bca27a3e0abcaae8c866ba0058d2f02bdbebb62",
+      "modified_lf_sha256": "940619346febc190494a1613ba01df71dc904baf8c350b1517699116d89e231e",
+      "replacements": [
+        {
+          "before": "sampling_times=measurements.t_meas(end):p.filtration_sampling_interval:t;",
+          "after": "sampling_times=(measurements.t_meas(end)+p.filtration_sampling_interval):p.filtration_sampling_interval:t;"
+        },
+        {
+          "before": "measurements_nf.Tg_in_TI101=[measurements_nf.Tg_in_TI101 u.Tinlet_drying];",
+          "after": "measurements_nf.Tg_in_TI101=[measurements_nf.Tg_in_TI101 u.Tinlet_drying*ones(1,length(sampling_times))];"
+        },
+        {
+          "before": "measurements_nf.Tg_out_TI102=[measurements_nf.Tg_out_TI102 p.T_room];",
+          "after": "measurements_nf.Tg_out_TI102=[measurements_nf.Tg_out_TI102 p.T_room*ones(1,length(sampling_times))];"
+        },
+        {
+          "before": "measurements_nf.Vdryer_FI101=[measurements_nf.Vdryer_FI101 0];",
+          "after": "measurements_nf.Vdryer_FI101=[measurements_nf.Vdryer_FI101 zeros(1,length(sampling_times))];"
+        }
+      ]
+    },
+    {
+      "target": "simulator/model_filtration.m",
+      "original_lf_sha256": "622c14ca73b819941ba7279626f792474d5d06b40804c7c41752730299f6158d",
+      "modified_lf_sha256": "31e49f0f47a1a4c53610ef694442b355796d3e751bc88b68be9a4298c8cc7afb",
+      "replacements": [
+        {
+          "before": "        y.(['pos' num2str(pos)]).(['batch_' num2str(n_batch)]).t(end)=[];\n        y.(['pos' num2str(pos)]).(['batch_' num2str(n_batch)]).m_filt(end)=[];\n        y.(['pos' num2str(pos)]).(['batch_' num2str(n_batch)]).w_EtOH_cake(end)=[];\n        y.(['pos' num2str(pos)]).(['batch_' num2str(n_batch)]).S(end)=[];",
+          "after": "        % A grid endpoint is a sensor sample; only discard off-grid transition output.\n        sample_time=y.(['pos' num2str(pos)]).(['batch_' num2str(n_batch)]).t(end);\n        if abs(sample_time/p.filtration_sampling_interval-round(sample_time/p.filtration_sampling_interval))>1e-9\n            y.(['pos' num2str(pos)]).(['batch_' num2str(n_batch)]).t(end)=[];\n            y.(['pos' num2str(pos)]).(['batch_' num2str(n_batch)]).m_filt(end)=[];\n            y.(['pos' num2str(pos)]).(['batch_' num2str(n_batch)]).w_EtOH_cake(end)=[];\n            y.(['pos' num2str(pos)]).(['batch_' num2str(n_batch)]).S(end)=[];\n        end"
+        }
+      ]
+    },
+    {
+      "target": "simulator/disturbances.m",
+      "original_lf_sha256": "e35495cd57615579db9ba5eb3c3bdb45614bbe4f4b5fc69ba648b2d099235056",
+      "modified_lf_sha256": "8d2bd118cb8d52467ff88a43a8b0f24149d41987b1bb1dd8293af1a810def1d2",
+      "replacements": [
+        {
+          "before": "    %% slurry concentration ramp change",
+          "after": "    % The sensitivity campaign passes an explicit size; scalar flags retain upstream size.\n    disturbance_scale = 1;\n    if isstruct(flag)\n        disturbance_scale = flag.scale;\n        flag = flag.scenario;\n    end\n    assert(isscalar(disturbance_scale) && isfinite(disturbance_scale) && ...\n        disturbance_scale > 0 && disturbance_scale <= 3, 'Invalid disturbance scale.');\n    %% slurry concentration ramp change"
+        },
+        {
+          "before": "(t-300)/60*0.02",
+          "after": "(t-300)/60*0.02*disturbance_scale"
+        },
+        {
+          "before": "(1500-300)/60*0.02",
+          "after": "(1500-300)/60*0.02*disturbance_scale"
+        },
+        {
+          "before": "d.alpha(n_cycle)=d.alpha(n_cycle)*2;",
+          "after": "d.alpha(n_cycle)=d.alpha(n_cycle)*(1+disturbance_scale);"
+        }
+      ]
+    }
+  ],
+  "purpose": "Retain sensor-logging-v2 and explicitly scale the built-in concentration ramp and cake-resistance increment. Scale 1 preserves their original amplitudes; process equations, noise and controller settings are unchanged."
+}

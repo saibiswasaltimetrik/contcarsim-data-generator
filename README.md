@@ -4,7 +4,8 @@ Standalone generation of simulated paracetamol/ethanol slurry filtration and dry
 recordings from [ContCarSim](https://github.com/CryPTSys/ContCarSim), pinned at
 `7f620cbff705672155afc428bcc43281efcb775c`. The simulator and this distribution use
 GPL-3.0; see LICENSE. No production data, credentials, engine code or dashboard code
-are included. Upstream equations and built-in disturbances are unchanged. The simulator uses the
+are included. Default campaigns preserve upstream equations and built-in disturbance sizes. The sensitivity
+campaign below explicitly scales disturbance sizes. The simulator uses the
 reviewed `sensor-logging-v2` correction described below; it is modified upstream code.
 
 ## Measurement logging correction
@@ -18,7 +19,7 @@ MATLAB file, and manifest record the patch ID and original/modified file hashes.
 
 The correction changes measurement-noise random consumption and the next-cycle filtrate
 bias, so identical seeds do not reproduce unmodified recordings. Process equations and
-built-in disturbance definitions are unchanged. No exported readings are deduplicated,
+built-in disturbance definitions are unchanged in logging-only campaigns. No exported readings are deduplicated,
 interpolated, averaged or retimed. A fresh pilot must pass private validation.
 
 ## Hosted pilot without a personal MATLAB license
@@ -85,3 +86,23 @@ Full campaign: 100 reference nominal (30 fitting/70 calibration), 50 held-out no
 20 concentration ramps and 20 resistance steps. Seeds are fixed and disjoint from the pilot.
 The manifest records source/config/wrapper checksums and per-recording native/sensor checksums.
 No accuracy or fitness claim is implied by successful simulation alone.
+
+## Explicit disturbance-size sensitivity campaign
+
+When campaign.json selects sensor-logging-v2-disturbance-scale-v1, its checksummed
+patch also parameterizes disturbances.m. The wrapper passes scenario and size explicitly;
+scalar scenarios and size 1 retain the original disturbance equations. No process equation,
+controller or noise distribution changes. This is modified upstream simulator source.
+
+The sensitivity campaign generates 24 disturbed recordings: two seeds at each of six
+sizes (0.25, 0.5, 1, 1.5, 2, 3) for both families. Concentration ramps end at increases of
+10%, 20%, 40%, 60%, 80%, 120%; cake-resistance steps multiply resistance by
+1.25, 1.5, 2, 2.5, 3, 4. Disturbances still start at the first cycle boundary after 300s.
+Two matched nominal controls check compatibility; matched size-1 disturbed seeds also
+check reproduction of earlier recordings. These repeated controls are not new independent
+normal validation runs. All seeds and sizes are frozen before scoring. Original and partial
+failed outputs are retained. A strength sweep is exploratory, not an accuracy certification.
+
+The pilot workflow is the execution vehicle for this separate explicit sensitivity request;
+it does not dispatch the approval-gated 190-run full campaign. Detector fitting, plots,
+fitness checks and study reports remain private and are not part of this public package.

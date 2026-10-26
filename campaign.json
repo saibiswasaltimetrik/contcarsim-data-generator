@@ -20,20 +20,100 @@
     {
       "split": "reference",
       "scenario": 0,
-      "count": 30,
-      "seed_start": 200001
+      "count": 1,
+      "seed_start": 200001,
+      "disturbance_scale": 1
+    },
+    {
+      "split": "reference",
+      "scenario": 0,
+      "count": 1,
+      "seed_start": 200030,
+      "disturbance_scale": 1
     },
     {
       "split": "evaluation",
       "scenario": 1,
-      "count": 1,
-      "seed_start": 200101
+      "count": 2,
+      "seed_start": 301000,
+      "disturbance_scale": 0.25
+    },
+    {
+      "split": "evaluation",
+      "scenario": 1,
+      "count": 2,
+      "seed_start": 301010,
+      "disturbance_scale": 0.5
+    },
+    {
+      "split": "evaluation",
+      "scenario": 1,
+      "count": 2,
+      "seed_start": 200101,
+      "disturbance_scale": 1
+    },
+    {
+      "split": "evaluation",
+      "scenario": 1,
+      "count": 2,
+      "seed_start": 301030,
+      "disturbance_scale": 1.5
+    },
+    {
+      "split": "evaluation",
+      "scenario": 1,
+      "count": 2,
+      "seed_start": 301040,
+      "disturbance_scale": 2
+    },
+    {
+      "split": "evaluation",
+      "scenario": 1,
+      "count": 2,
+      "seed_start": 301050,
+      "disturbance_scale": 3
     },
     {
       "split": "evaluation",
       "scenario": 2,
-      "count": 1,
-      "seed_start": 200201
+      "count": 2,
+      "seed_start": 302000,
+      "disturbance_scale": 0.25
+    },
+    {
+      "split": "evaluation",
+      "scenario": 2,
+      "count": 2,
+      "seed_start": 302010,
+      "disturbance_scale": 0.5
+    },
+    {
+      "split": "evaluation",
+      "scenario": 2,
+      "count": 2,
+      "seed_start": 200201,
+      "disturbance_scale": 1
+    },
+    {
+      "split": "evaluation",
+      "scenario": 2,
+      "count": 2,
+      "seed_start": 302030,
+      "disturbance_scale": 1.5
+    },
+    {
+      "split": "evaluation",
+      "scenario": 2,
+      "count": 2,
+      "seed_start": 302040,
+      "disturbance_scale": 2
+    },
+    {
+      "split": "evaluation",
+      "scenario": 2,
+      "count": 2,
+      "seed_start": 302050,
+      "disturbance_scale": 3
     }
   ],
   "full": [
@@ -67,9 +147,9 @@
     "min_detection_rate_per_family": 0.8
   },
   "simulator_modification": {
-    "id": "sensor-logging-v2",
-    "patch_file": "patches/cycle-timing.json",
-    "patch_sha256": "fa898d539cea2f098318513a1d442c34a05579923c5096b5c1519fcb5fb7b57f",
+    "id": "sensor-logging-v2-disturbance-scale-v1",
+    "patch_file": "patches/disturbance-sweep.json",
+    "patch_sha256": "8fa08375d6fda870d8c5e14d98a03dea03db7d237924e8696517d6e606b0776f",
     "files": [
       {
         "target": "simulator/switch_cycle.m",
@@ -80,8 +160,49 @@
         "target": "simulator/model_filtration.m",
         "original_lf_sha256": "622c14ca73b819941ba7279626f792474d5d06b40804c7c41752730299f6158d",
         "modified_lf_sha256": "31e49f0f47a1a4c53610ef694442b355796d3e751bc88b68be9a4298c8cc7afb"
+      },
+      {
+        "target": "simulator/disturbances.m",
+        "original_lf_sha256": "e35495cd57615579db9ba5eb3c3bdb45614bbe4f4b5fc69ba648b2d099235056",
+        "modified_lf_sha256": "8d2bd118cb8d52467ff88a43a8b0f24149d41987b1bb1dd8293af1a810def1d2"
       }
     ]
   },
-  "campaign_id": "minimum-baseline-v1"
+  "campaign_id": "disturbance-sensitivity-v1",
+  "study_design": {
+    "disturbed_recordings": 24,
+    "sizes": [
+      0.25,
+      0.5,
+      1,
+      1.5,
+      2,
+      3
+    ],
+    "repeats_per_size_per_family": 2,
+    "concentration_final_increase_percent": [
+      10,
+      20,
+      40,
+      60,
+      80,
+      120
+    ],
+    "resistance_multiplier": [
+      1.25,
+      1.5,
+      2,
+      2.5,
+      3,
+      4
+    ],
+    "reference_manifest_sha256": "e884977d021c8e02d311f0ae8fa8a252a69040e0da6ffca40bd10c4b33e6dd11",
+    "compatibility_controls": {
+      "pilot0001": "pilot0001",
+      "pilot0002": "pilot0030",
+      "pilot0007": "pilot0031",
+      "pilot0019": "pilot0032"
+    },
+    "note": "Two nominal controls and the first scale-1 run of each family must exactly reproduce existing reference/disturbance sensor bytes. They are compatibility checks, not independent test normals. Train only on the separate frozen 30-run baseline. This is an exploratory sensitivity campaign, not the gated 190-run full campaign."
+  }
 }

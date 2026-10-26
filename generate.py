@@ -53,7 +53,7 @@ def save_json(path: Path, value: Any) -> None:
 
 
 def apply_simulator_modification(package: Path, settings: dict[str, Any]) -> dict[str, Any]:
-    """Apply only the reviewed logging correction to an exact upstream file.
+    """Apply the campaign's checksummed simulator patch to exact upstream files.
 
     Normalize line endings for cross-platform hashes. A changed patch or source fails
     before MATLAB starts; an already patched checkout must match the final hash.
@@ -104,6 +104,12 @@ def plan(settings: dict[str, Any], phase: str) -> list[dict[str, Any]]:
     """Mirror the frozen campaign allocation without exposing engine implementation."""
     entries = []
     for group in settings[phase]:
+        scale = group.get("disturbance_scale")
+        if scale is not None and (
+            type(scale) not in (int, float) or not math.isfinite(scale) or not 0 < scale <= 3
+            or (group["scenario"] == 0 and scale != 1)
+        ):
+            raise ValueError("Disturbance scale must be finite in (0, 3], and nominal controls require 1")
         for offset in range(group["count"]):
             index = len(entries) + 1
             entries.append(
@@ -113,6 +119,7 @@ def plan(settings: dict[str, Any], phase: str) -> list[dict[str, Any]]:
                     "scenario": group["scenario"],
                     "split": group["split"],
                     "role": "healthy" if group["scenario"] == 0 else "analysis",
+                    **({"disturbance_scale": scale} if scale is not None else {}),
                 }
             )
     return entries
@@ -237,6 +244,7 @@ def prepare(package: Path, phase: str, shard: int | None, pilot: Path | None) ->
             "recipe": settings["recipe"],
             "seed": entry["seed"],
             "scenario": entry["scenario"],
+            **({"disturbance_scale": entry["disturbance_scale"]} if "disturbance_scale" in entry else {}),
             "simulator_directory": str(simulator.resolve()),
             "sensor_file": str((root / f"runs/{run_id}.csv").resolve()),
             "native_file": str((root / f"native/{run_id}.mat").resolve()),
@@ -281,6 +289,8 @@ def collect(package: Path) -> Path:
         runtime = read_json(results / f"{run_id}.json")
         if read_json(results / f"{run_id}.job.json").get("simulator_modification", {}) != modification:
             raise ValueError(f"Simulator modification differs in job: {run_id}")
+        if read_json(results / f"{run_id}.job.json").get("disturbance_scale") != item.get("disturbance_scale"):
+            raise ValueError(f"Disturbance scale differs in job: {run_id}")
         sensor, native = root / f"runs/{run_id}.csv", root / f"native/{run_id}.mat"
         validate_rows(sensor, runtime["rows"])
         entry = {key: value for key, value in item.items() if key != "scenario"}

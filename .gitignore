@@ -1,0 +1,6 @@
+external/
+output/
+parts/
+evidence/
+pilot-artifact/
+__pycache__/

@@ -1,0 +1,121 @@
+name: Generate approved ContCarSim full campaign
+on:
+  workflow_dispatch:
+    inputs:
+      pilot_run_id:
+        description: GitHub run ID for the locally verified pilot artifact
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+env:
+  PILOT_RUN_ID: ${{ inputs.pilot_run_id }}
+jobs:
+  verify-pilot:
+    if: github.event.repository.visibility == 'public'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Download exact pilot artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: contcarsim-pilot
+          path: pilot-artifact
+          run-id: ${{ inputs.pilot_run_id }}
+          github-token: ${{ github.token }}
+      - name: Verify immutable pilot files and local fitness approval
+        run: python generate.py verify-pilot --pilot pilot-artifact/data/raw/contcarsim/pilot
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: verified-pilot-evidence
+          path: output/
+          retention-days: 7
+      - name: Retain failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: pilot-verification-failure
+          path: output/
+          if-no-files-found: warn
+          retention-days: 7
+  recordings:
+    needs: verify-pilot
+    runs-on: windows-2022
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+    env:
+      SHARD_INDEX: ${{ matrix.shard }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: CryPTSys/ContCarSim
+          ref: 7f620cbff705672155afc428bcc43281efcb775c
+          path: external/ContCarSim
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: verified-pilot-evidence
+          path: evidence
+      - name: Prepare this frozen shard
+        shell: pwsh
+        run: python generate.py prepare --phase full --shard $env:SHARD_INDEX --pilot evidence/pilot-evidence
+      - uses: matlab-actions/setup-matlab@f9e43010f1ae678f7cfa0542fe2a4f60f7d1ad8d # v3
+        with:
+          release: R2024b
+      - name: Run original simulator
+        uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5 # v3
+        with:
+          command: addpath('matlab'); run_hosted_campaign('output/jobs.json')
+      - run: python generate.py collect
+      - name: Retain each shard, including partial failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: contcarsim-part-${{ matrix.shard }}
+          path: output/
+          if-no-files-found: warn
+          retention-days: 7
+          compression-level: 1
+  merge:
+    needs: recordings
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: contcarsim-part-*
+          path: parts
+      - name: Assemble every recording without replacing failures
+        run: python generate.py merge --parts parts
+      - name: Publish complete campaign or merge diagnostics
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: contcarsim-full
+          path: output/
+          if-no-files-found: warn
+          retention-days: 7
+          compression-level: 1

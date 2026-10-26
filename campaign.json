@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "source_url": "https://github.com/CryPTSys/ContCarSim",
+  "revision": "7f620cbff705672155afc428bcc43281efcb775c",
+  "license": "GPL-3.0",
+  "recipe": {
+    "control_mode": 0,
+    "t_cycle": 45,
+    "V_slurry": 0.000003,
+    "P_compr": 100000,
+    "Tinlet_drying": 323.15,
+    "conc_slurry": 250,
+    "total_duration": 1800,
+    "sampling_interval": 1,
+    "control_interval": 1,
+    "inter_cycle_Dt": 0,
+    "mesh_clean_Dt": 0
+  },
+  "pilot": [
+    {"split": "reference", "scenario": 0, "count": 10, "seed_start": 100001},
+    {"split": "evaluation", "scenario": 1, "count": 1, "seed_start": 100101},
+    {"split": "evaluation", "scenario": 2, "count": 1, "seed_start": 100201}
+  ],
+  "full": [
+    {"split": "reference", "scenario": 0, "count": 100, "seed_start": 1001},
+    {"split": "evaluation", "scenario": 0, "count": 50, "seed_start": 2001},
+    {"split": "evaluation", "scenario": 1, "count": 20, "seed_start": 3001},
+    {"split": "evaluation", "scenario": 2, "count": 20, "seed_start": 4001}
+  ],
+  "acceptance": {"max_false_alarm_rate": 0.05, "min_detection_rate_per_family": 0.8}
+}

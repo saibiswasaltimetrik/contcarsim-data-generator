@@ -1,0 +1,43 @@
+name: Generate ContCarSim pilot
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pilot:
+    if: github.event.repository.visibility == 'public'
+    runs-on: windows-2022
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: CryPTSys/ContCarSim
+          ref: 7f620cbff705672155afc428bcc43281efcb775c
+          path: external/ContCarSim
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Prepare frozen pilot jobs
+        run: python generate.py prepare --phase pilot
+      - uses: matlab-actions/setup-matlab@f9e43010f1ae678f7cfa0542fe2a4f60f7d1ad8d # v3
+        with:
+          release: R2024b
+      - name: Run original simulator with hosted MATLAB licensing
+        uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5 # v3
+        with:
+          command: addpath('matlab'); run_hosted_campaign('output/jobs.json')
+      - name: Validate and catalogue original outputs
+        run: python generate.py collect
+      - name: Retain recordings and diagnostics even on failure
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: contcarsim-pilot
+          path: output/
+          if-no-files-found: warn
+          retention-days: 7
+          compression-level: 1

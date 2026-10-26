@@ -4,7 +4,21 @@ Standalone generation of simulated paracetamol/ethanol slurry filtration and dry
 recordings from [ContCarSim](https://github.com/CryPTSys/ContCarSim), pinned at
 `7f620cbff705672155afc428bcc43281efcb775c`. The simulator and this distribution use
 GPL-3.0; see LICENSE. No production data, credentials, engine code or dashboard code
-are included. Upstream equations and built-in disturbances are unchanged.
+are included. Upstream equations and built-in disturbances are unchanged. The simulator uses the
+reviewed `cycle-boundary-logging-v1` correction described below; it is modified upstream code.
+
+## Measurement logging correction
+
+The unmodified upstream logger repeats the last timestamp at cycle boundaries. Before
+execution, the coordinator applies four exact replacements from `patches/cycle-timing.json`
+only when the original source hash matches. Logging starts at the next sample instant and
+noise-free channels retain matching lengths. The campaign, job saved inside each native
+MATLAB file, and manifest record the patch ID and original/modified file hashes.
+
+The correction changes measurement-noise random consumption and the next-cycle filtrate
+bias, so identical seeds do not reproduce unmodified recordings. Process equations and
+built-in disturbance definitions are unchanged. No exported readings are deduplicated,
+interpolated, averaged or retimed. A fresh pilot must pass private validation.
 
 ## Hosted pilot without a personal MATLAB license
 
@@ -15,12 +29,12 @@ runner or billing change is configured here. See [MathWorks licensing](https://g
 and [GitHub billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions).
 
 1. Enable Actions and manually run **Generate ContCarSim pilot**.
-2. The Windows runner prepares MATLAB R2024b and calls the original simulator for 10 nominal
+2. The Windows runner prepares MATLAB R2024b and calls the simulator with the documented logging correction for 10 nominal
    recordings and one per built-in disturbance. No local MATLAB installation or Python engine
    is involved. Compatibility of the supplied Windows compiled components is established by
    execution, not assumed. Failures retain logs and partial outputs.
 3. Download the `contcarsim-pilot` artifact within seven days. It contains `data/raw/contcarsim/pilot/`
-   and `results/contcarsim/pilot/`. Copy those folders into the corresponding local project folders.
+   and `results/contcarsim/pilot/`. Use fresh local data/results directories for each attempt and preserve failed pilot outputs.
 4. Run the private/local project's normal pilot evaluator. Native/CSV equality, original timing,
    three-lag fitness and pre/post-disturbance observations must pass before full generation.
    A small pilot does not establish detector accuracy or healthy-baseline sufficiency.

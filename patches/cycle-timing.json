@@ -1,0 +1,25 @@
+{
+  "id": "cycle-boundary-logging-v1",
+  "target": "simulator/switch_cycle.m",
+  "original_lf_sha256": "f2c8da04c13bb97f85de28c66bca27a3e0abcaae8c866ba0058d2f02bdbebb62",
+  "modified_lf_sha256": "940619346febc190494a1613ba01df71dc904baf8c350b1517699116d89e231e",
+  "replacements": [
+    {
+      "before": "sampling_times=measurements.t_meas(end):p.filtration_sampling_interval:t;",
+      "after": "sampling_times=(measurements.t_meas(end)+p.filtration_sampling_interval):p.filtration_sampling_interval:t;"
+    },
+    {
+      "before": "measurements_nf.Tg_in_TI101=[measurements_nf.Tg_in_TI101 u.Tinlet_drying];",
+      "after": "measurements_nf.Tg_in_TI101=[measurements_nf.Tg_in_TI101 u.Tinlet_drying*ones(1,length(sampling_times))];"
+    },
+    {
+      "before": "measurements_nf.Tg_out_TI102=[measurements_nf.Tg_out_TI102 p.T_room];",
+      "after": "measurements_nf.Tg_out_TI102=[measurements_nf.Tg_out_TI102 p.T_room*ones(1,length(sampling_times))];"
+    },
+    {
+      "before": "measurements_nf.Vdryer_FI101=[measurements_nf.Vdryer_FI101 0];",
+      "after": "measurements_nf.Vdryer_FI101=[measurements_nf.Vdryer_FI101 zeros(1,length(sampling_times))];"
+    }
+  ],
+  "purpose": "Prevent repeated cycle-boundary sensor timestamps at generation; align noise-free channels. Process equations unchanged. Measurement-noise random consumption and next-cycle bias differ from unmodified upstream."
+}

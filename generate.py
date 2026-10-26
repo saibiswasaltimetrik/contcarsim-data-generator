@@ -52,6 +52,39 @@ def save_json(path: Path, value: Any) -> None:
     temporary.replace(path)
 
 
+def apply_simulator_modification(package: Path, settings: dict[str, Any]) -> dict[str, Any]:
+    """Apply only the reviewed logging correction to an exact upstream file.
+
+    Normalize line endings for cross-platform hashes. A changed patch or source fails
+    before MATLAB starts; an already patched checkout must match the final hash.
+    """
+    modification = settings.get("simulator_modification")
+    if not modification:
+        return {}
+    patch_path = confined(package, modification["patch_file"])
+    if digest(patch_path) != modification["patch_sha256"]:
+        raise ValueError("Simulator patch checksum differs from frozen campaign")
+    patch = read_json(patch_path)
+    for key in ("id", "target", "original_lf_sha256", "modified_lf_sha256"):
+        if patch[key] != modification[key]:
+            raise ValueError(f"Simulator patch metadata differs: {key}")
+    target = confined(package / "external/ContCarSim", patch["target"])
+    source = target.read_text(encoding="utf-8")
+    checksum = hashlib.sha256(source.encode("utf-8")).hexdigest()
+    if checksum == patch["modified_lf_sha256"]:
+        return modification
+    if checksum != patch["original_lf_sha256"]:
+        raise ValueError("Simulator source differs from the reviewed upstream file")
+    for replacement in patch["replacements"]:
+        if source.count(replacement["before"]) != 1:
+            raise ValueError("Simulator patch does not match exactly once")
+        source = source.replace(replacement["before"], replacement["after"])
+    if hashlib.sha256(source.encode("utf-8")).hexdigest() != patch["modified_lf_sha256"]:
+        raise ValueError("Modified simulator checksum differs from reviewed correction")
+    target.write_bytes(source.encode("utf-8"))
+    return modification
+
+
 def confined(root: Path, name: str) -> Path:
     """Prevent untrusted artifact manifests from referencing files outside their root."""
     path = (root / name).resolve()
@@ -130,6 +163,7 @@ def verify_approval(package: Path, pilot: Path, *, verify_files: bool) -> dict[s
         or manifest["recipe"] != settings["recipe"]
         or manifest["campaign_sha256"] != approval["campaign_sha256"]
         or manifest["wrapper_sha256"] != approval["wrapper_sha256"]
+        or manifest.get("simulator_modification", {}) != settings.get("simulator_modification", {})
         or manifest.get("hosted", {}).get("repository") != approval.get("pilot_repository")
         or manifest.get("hosted", {}).get("generator_revision") != approval.get("pilot_generator_revision")
     ):
@@ -180,6 +214,7 @@ def prepare(package: Path, phase: str, shard: int | None, pilot: Path | None) ->
     license_file = simulator.parent / "LICENSE.txt"
     if not license_file.is_file():
         raise ValueError("Pinned upstream checkout is missing")
+    modification = apply_simulator_modification(package, settings)
     for folder in (root / "runs", root / "native", results):
         folder.mkdir(parents=True, exist_ok=True)
     # Keep enough disk for at least the pilot plus logs before measuring actual usage.
@@ -190,6 +225,7 @@ def prepare(package: Path, phase: str, shard: int | None, pilot: Path | None) ->
         run_id = entry["run_id"]
         job_path = results / f"{run_id}.job.json"
         job = {
+            "simulator_modification": modification,
             "mode": "generate",
             "recipe": settings["recipe"],
             "seed": entry["seed"],
@@ -229,12 +265,15 @@ def collect(package: Path) -> Path:
     index = read_json(package / "output/jobs.json")
     root, results = Path(index["data_directory"]), Path(index["results_directory"])
     completed = read_json(results / "completed.json")
+    modification = apply_simulator_modification(package, settings)
     if completed["completed"] != [item["run_id"] for item in index["entries"]]:
         raise ValueError("Incomplete campaign; partial files remain available for diagnosis")
     entries, labels, quality, runtimes = [], [], [], []
     for item in index["entries"]:
         run_id = item["run_id"]
         runtime = read_json(results / f"{run_id}.json")
+        if read_json(results / f"{run_id}.job.json").get("simulator_modification", {}) != modification:
+            raise ValueError(f"Simulator modification differs in job: {run_id}")
         sensor, native = root / f"runs/{run_id}.csv", root / f"native/{run_id}.mat"
         validate_rows(sensor, runtime["rows"])
         entry = {key: value for key, value in item.items() if key != "scenario"}
@@ -287,6 +326,7 @@ def collect(package: Path) -> Path:
         "status": "complete",
         "phase": index["phase"],
         "recipe": settings["recipe"],
+        "simulator_modification": modification,
         **{key: settings[key] for key in ("source_url", "revision", "license")},
         "license_sha256": digest(package / "external/ContCarSim/LICENSE.txt"),
         "campaign_sha256": digest(package / "campaign.json"),
@@ -329,6 +369,7 @@ def merge(package: Path, parts: Path) -> Path:
         identity = {
             key: part[key] for key in ("revision", "recipe", "campaign_sha256", "wrapper_sha256", "license_sha256")
         }
+        identity["simulator_modification"] = part.get("simulator_modification", {})
         if provenance is not None and identity != provenance:
             raise ValueError("Shards have different simulator, recipe or generator provenance")
         if (
@@ -336,6 +377,7 @@ def merge(package: Path, parts: Path) -> Path:
             or part["recipe"] != settings["recipe"]
             or part["campaign_sha256"] != digest(package / "campaign.json")
             or part["wrapper_sha256"] != digest(package / "matlab/generate_campaign.m")
+            or part.get("simulator_modification", {}) != settings.get("simulator_modification", {})
         ):
             raise ValueError("Shard provenance differs from this generator's frozen configuration")
         provenance = identity

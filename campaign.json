@@ -20,20 +20,20 @@
     {
       "split": "reference",
       "scenario": 0,
-      "count": 10,
-      "seed_start": 100001
+      "count": 30,
+      "seed_start": 200001
     },
     {
       "split": "evaluation",
       "scenario": 1,
       "count": 1,
-      "seed_start": 100101
+      "seed_start": 200101
     },
     {
       "split": "evaluation",
       "scenario": 2,
       "count": 1,
-      "seed_start": 100201
+      "seed_start": 200201
     }
   ],
   "full": [
@@ -82,5 +82,6 @@
         "modified_lf_sha256": "31e49f0f47a1a4c53610ef694442b355796d3e751bc88b68be9a4298c8cc7afb"
       }
     ]
-  }
+  },
+  "campaign_id": "minimum-baseline-v1"
 }

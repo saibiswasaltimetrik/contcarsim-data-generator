@@ -30,8 +30,8 @@ runner or billing change is configured here. See [MathWorks licensing](https://g
 and [GitHub billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions).
 
 1. Enable Actions and manually run **Generate ContCarSim pilot**.
-2. The Windows runner prepares MATLAB R2024b and calls the simulator with the documented logging correction for 10 nominal
-   recordings and one per built-in disturbance. No local MATLAB installation or Python engine
+2. The Windows runner prepares MATLAB R2024b and calls the simulator with the documented logging correction
+   for the counts and seeds frozen in `campaign.json`. No local MATLAB installation or Python engine
    is involved. Compatibility of the supplied Windows compiled components is established by
    execution, not assumed. Failures retain logs and partial outputs.
 3. Download the `contcarsim-pilot` artifact within seven days. It contains `data/raw/contcarsim/pilot/`

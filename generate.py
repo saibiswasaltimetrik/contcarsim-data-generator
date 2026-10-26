@@ -65,23 +65,30 @@ def apply_simulator_modification(package: Path, settings: dict[str, Any]) -> dic
     if digest(patch_path) != modification["patch_sha256"]:
         raise ValueError("Simulator patch checksum differs from frozen campaign")
     patch = read_json(patch_path)
-    for key in ("id", "target", "original_lf_sha256", "modified_lf_sha256"):
-        if patch[key] != modification[key]:
-            raise ValueError(f"Simulator patch metadata differs: {key}")
-    target = confined(package / "external/ContCarSim", patch["target"])
-    source = target.read_text(encoding="utf-8")
-    checksum = hashlib.sha256(source.encode("utf-8")).hexdigest()
-    if checksum == patch["modified_lf_sha256"]:
-        return modification
-    if checksum != patch["original_lf_sha256"]:
-        raise ValueError("Simulator source differs from the reviewed upstream file")
-    for replacement in patch["replacements"]:
-        if source.count(replacement["before"]) != 1:
-            raise ValueError("Simulator patch does not match exactly once")
-        source = source.replace(replacement["before"], replacement["after"])
-    if hashlib.sha256(source.encode("utf-8")).hexdigest() != patch["modified_lf_sha256"]:
-        raise ValueError("Modified simulator checksum differs from reviewed correction")
-    target.write_bytes(source.encode("utf-8"))
+    identities = [
+        {key: file[key] for key in ("target", "original_lf_sha256", "modified_lf_sha256")}
+        for file in patch["files"]
+    ]
+    if patch["id"] != modification["id"] or identities != modification["files"]:
+        raise ValueError("Simulator patch metadata differs from frozen campaign")
+    pending = []
+    for file in patch["files"]:
+        target = confined(package / "external/ContCarSim", file["target"])
+        source = target.read_text(encoding="utf-8")
+        checksum = hashlib.sha256(source.encode("utf-8")).hexdigest()
+        if checksum == file["modified_lf_sha256"]:
+            continue
+        if checksum != file["original_lf_sha256"]:
+            raise ValueError(f"Simulator source differs from the reviewed upstream file: {file['target']}")
+        for replacement in file["replacements"]:
+            if source.count(replacement["before"]) != 1:
+                raise ValueError("Simulator patch does not match exactly once")
+            source = source.replace(replacement["before"], replacement["after"])
+        if hashlib.sha256(source.encode("utf-8")).hexdigest() != file["modified_lf_sha256"]:
+            raise ValueError("Modified simulator checksum differs from reviewed correction")
+        pending.append((target, source))
+    for target, source in pending:
+        target.write_bytes(source.encode("utf-8"))
     return modification
 
 

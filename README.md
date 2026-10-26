@@ -5,14 +5,15 @@ recordings from [ContCarSim](https://github.com/CryPTSys/ContCarSim), pinned at
 `7f620cbff705672155afc428bcc43281efcb775c`. The simulator and this distribution use
 GPL-3.0; see LICENSE. No production data, credentials, engine code or dashboard code
 are included. Upstream equations and built-in disturbances are unchanged. The simulator uses the
-reviewed `cycle-boundary-logging-v1` correction described below; it is modified upstream code.
+reviewed `sensor-logging-v2` correction described below; it is modified upstream code.
 
 ## Measurement logging correction
 
 The unmodified upstream logger repeats the last timestamp at cycle boundaries. Before
-execution, the coordinator applies four exact replacements from `patches/cycle-timing.json`
-only when the original source hash matches. Logging starts at the next sample instant and
-noise-free channels retain matching lengths. The campaign, job saved inside each native
+execution, the coordinator applies exact replacements in two logging routines from `patches/cycle-timing.json`
+only when the original source hash matches. Logging starts at the next sample instant,
+noise-free channels retain matching lengths, and filtration endpoints on the sampling grid
+are preserved rather than deleted. Filtration equations and its completion condition remain unchanged. The campaign, job saved inside each native
 MATLAB file, and manifest record the patch ID and original/modified file hashes.
 
 The correction changes measurement-noise random consumption and the next-cycle filtrate

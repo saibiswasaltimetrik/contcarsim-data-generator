@@ -67,11 +67,20 @@
     "min_detection_rate_per_family": 0.8
   },
   "simulator_modification": {
-    "id": "cycle-boundary-logging-v1",
+    "id": "sensor-logging-v2",
     "patch_file": "patches/cycle-timing.json",
-    "patch_sha256": "26695e26661fa6044da5118c81fd9d18cb8f4cb41939ec5094dae9cf8ef7f6dc",
-    "target": "simulator/switch_cycle.m",
-    "original_lf_sha256": "f2c8da04c13bb97f85de28c66bca27a3e0abcaae8c866ba0058d2f02bdbebb62",
-    "modified_lf_sha256": "940619346febc190494a1613ba01df71dc904baf8c350b1517699116d89e231e"
+    "patch_sha256": "fa898d539cea2f098318513a1d442c34a05579923c5096b5c1519fcb5fb7b57f",
+    "files": [
+      {
+        "target": "simulator/switch_cycle.m",
+        "original_lf_sha256": "f2c8da04c13bb97f85de28c66bca27a3e0abcaae8c866ba0058d2f02bdbebb62",
+        "modified_lf_sha256": "940619346febc190494a1613ba01df71dc904baf8c350b1517699116d89e231e"
+      },
+      {
+        "target": "simulator/model_filtration.m",
+        "original_lf_sha256": "622c14ca73b819941ba7279626f792474d5d06b40804c7c41752730299f6158d",
+        "modified_lf_sha256": "31e49f0f47a1a4c53610ef694442b355796d3e751bc88b68be9a4298c8cc7afb"
+      }
+    ]
   }
 }

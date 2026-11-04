@@ -1,6 +1,8 @@
 name: Generate ContCarSim pilot
 on:
   workflow_dispatch:
+  push:
+    branches: ["rootiq/healthy-200031-20261105"]
 permissions:
   contents: read
 jobs:

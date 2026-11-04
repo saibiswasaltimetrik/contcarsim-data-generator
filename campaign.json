@@ -6,7 +6,7 @@
   "recipe": {
     "control_mode": 0,
     "t_cycle": 45,
-    "V_slurry": 3e-06,
+    "V_slurry": 0.000003,
     "P_compr": 100000,
     "Tinlet_drying": 323.15,
     "conc_slurry": 250,
@@ -18,102 +18,11 @@
   },
   "pilot": [
     {
-      "split": "reference",
+      "split": "evaluation",
       "scenario": 0,
       "count": 1,
-      "seed_start": 200001,
+      "seed_start": 200031,
       "disturbance_scale": 1
-    },
-    {
-      "split": "reference",
-      "scenario": 0,
-      "count": 1,
-      "seed_start": 200030,
-      "disturbance_scale": 1
-    },
-    {
-      "split": "evaluation",
-      "scenario": 1,
-      "count": 2,
-      "seed_start": 301000,
-      "disturbance_scale": 0.25
-    },
-    {
-      "split": "evaluation",
-      "scenario": 1,
-      "count": 2,
-      "seed_start": 301010,
-      "disturbance_scale": 0.5
-    },
-    {
-      "split": "evaluation",
-      "scenario": 1,
-      "count": 2,
-      "seed_start": 200101,
-      "disturbance_scale": 1
-    },
-    {
-      "split": "evaluation",
-      "scenario": 1,
-      "count": 2,
-      "seed_start": 301030,
-      "disturbance_scale": 1.5
-    },
-    {
-      "split": "evaluation",
-      "scenario": 1,
-      "count": 2,
-      "seed_start": 301040,
-      "disturbance_scale": 2
-    },
-    {
-      "split": "evaluation",
-      "scenario": 1,
-      "count": 2,
-      "seed_start": 301050,
-      "disturbance_scale": 3
-    },
-    {
-      "split": "evaluation",
-      "scenario": 2,
-      "count": 2,
-      "seed_start": 302000,
-      "disturbance_scale": 0.25
-    },
-    {
-      "split": "evaluation",
-      "scenario": 2,
-      "count": 2,
-      "seed_start": 302010,
-      "disturbance_scale": 0.5
-    },
-    {
-      "split": "evaluation",
-      "scenario": 2,
-      "count": 2,
-      "seed_start": 200201,
-      "disturbance_scale": 1
-    },
-    {
-      "split": "evaluation",
-      "scenario": 2,
-      "count": 2,
-      "seed_start": 302030,
-      "disturbance_scale": 1.5
-    },
-    {
-      "split": "evaluation",
-      "scenario": 2,
-      "count": 2,
-      "seed_start": 302040,
-      "disturbance_scale": 2
-    },
-    {
-      "split": "evaluation",
-      "scenario": 2,
-      "count": 2,
-      "seed_start": 302050,
-      "disturbance_scale": 3
     }
   ],
   "full": [
@@ -168,41 +77,11 @@
       }
     ]
   },
-  "campaign_id": "disturbance-sensitivity-v1",
+  "campaign_id": "additional-healthy-200031-v1",
   "study_design": {
-    "disturbed_recordings": 24,
-    "sizes": [
-      0.25,
-      0.5,
-      1,
-      1.5,
-      2,
-      3
-    ],
-    "repeats_per_size_per_family": 2,
-    "concentration_final_increase_percent": [
-      10,
-      20,
-      40,
-      60,
-      80,
-      120
-    ],
-    "resistance_multiplier": [
-      1.25,
-      1.5,
-      2,
-      2.5,
-      3,
-      4
-    ],
-    "reference_manifest_sha256": "e884977d021c8e02d311f0ae8fa8a252a69040e0da6ffca40bd10c4b33e6dd11",
-    "compatibility_controls": {
-      "pilot0001": "pilot0001",
-      "pilot0002": "pilot0030",
-      "pilot0007": "pilot0031",
-      "pilot0019": "pilot0032"
-    },
-    "note": "Two nominal controls and the first scale-1 run of each family must exactly reproduce existing reference/disturbance sensor bytes. They are compatibility checks, not independent test normals. Train only on the separate frozen 30-run baseline. This is an exploratory sensitivity campaign, not the gated 190-run full campaign."
+    "purpose": "One fresh nominal recording for RootIQ held-out replay; existing 30 independent nominal recordings remain the baseline.",
+    "independent_nominal_recordings": 1,
+    "seed": 200031,
+    "note": "Scenario 0 with unchanged recipe and existing checksummed logging/disturbance patch. This request does not run or approve the full campaign and implies no detector or causal accuracy claim."
   }
 }
